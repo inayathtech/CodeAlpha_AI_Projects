@@ -1,25 +1,26 @@
-# Language Translation Tool
+# AI FAQ Chatbot
 
 ## About the Project
 This project is developed as part of the CodeAlpha Artificial Intelligence Internship.
 
-The Language Translation Tool is a Python-based application that translates text from one language to another using the MyMemory Translation API.
+The AI FAQ Chatbot is a Python-based application that answers frequently asked questions using basic Natural Language Processing concepts and cosine similarity.
 
 ## Features
-- Simple graphical user interface.
-- Enter text for translation.
-- Select source and target languages.
-- Supports multiple languages.
-- Displays translated text.
-- Copy translation option.
-- Clear text option.
+- Interactive chatbot interface.
+- Frequently asked questions and answers.
+- Text preprocessing.
+- Stop-word removal.
+- Cosine similarity matching.
+- Automatic answer selection.
+- Clear chat option.
 
 ## Technologies Used
 - Python 3.11
 - Tkinter
-- MyMemory Translation API
-- JSON
-- urllib
+- Natural Language Processing concepts
+- Regular Expressions
+- Collections
+- Cosine Similarity
 
 ## How to Run
 1. Install Python.
@@ -29,4 +30,4 @@ The Language Translation Tool is a Python-based application that translates text
 `python app.py`
 
 ## Conclusion
-This project demonstrates how Python and an online translation API can be used to develop a simple language translation application.
+This project demonstrates how text preprocessing and similarity matching can be used to develop a simple FAQ chatbot.
