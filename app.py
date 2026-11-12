@@ -1,156 +1,168 @@
 
 import tkinter as tk
-from tkinter import scrolledtext
-import re
-import math
+from tkinter import ttk, messagebox
+import urllib.request
+import urllib.parse
+import json
 
-faqs = [
-    ("What is artificial intelligence?",
-     "Artificial Intelligence is the ability of machines to perform tasks that normally require human intelligence."),
-    ("What is machine learning?",
-     "Machine Learning is a branch of AI that allows computers to learn from data."),
-    ("What is Python?",
-     "Python is a popular, easy-to-learn programming language."),
-    ("What is an internship?",
-     "An internship provides students with practical work experience."),
-    ("What is CodeAlpha?",
-     "CodeAlpha is a software development company that provides internship opportunities."),
-    ("What is programming?",
-     "Programming is the process of writing instructions for a computer."),
-    ("What is a chatbot?",
-     "A chatbot is a computer program that communicates with users through text or voice."),
-    ("What is NLP?",
-     "Natural Language Processing helps computers understand and process human language."),
-    ("What is deep learning?",
-     "Deep Learning is a type of machine learning based on artificial neural networks."),
-    ("What is data science?",
-     "Data Science involves collecting, processing and analyzing data to find useful information."),
-    ("How are you?",
-     "I am doing great! Thank you for asking."),
-    ("Hello",
-     "Hello! Welcome to our FAQ chatbot. How can I help you?"),
-    ("What are your features?",
-     "I can answer frequently asked questions about AI, Python, programming and internships."),
-    ("Thank you",
-     "You are welcome! Feel free to ask another question.")
-]
+def translate_text():
+    text = input_text.get("1.0", tk.END).strip()
 
-stop_words = {
-    "is", "the", "a", "an", "what", "are", "how",
-    "of", "to", "for", "and", "in", "do", "does",
-    "can", "i", "you", "your", "it", "about"
-}
-
-def preprocess(text):
-    words = re.findall(r"[a-z]+", text.lower())
-    return [word for word in words if word not in stop_words]
-
-def cosine_similarity(words1, words2):
-    all_words = set(words1) | set(words2)
-
-    if not all_words:
-        return 0
-
-    dot = sum(words1.count(w) * words2.count(w)
-              for w in all_words)
-
-    magnitude1 = math.sqrt(sum(words1.count(w) ** 2
-                               for w in all_words))
-    magnitude2 = math.sqrt(sum(words2.count(w) ** 2
-                               for w in all_words))
-
-    if magnitude1 == 0 or magnitude2 == 0:
-        return 0
-
-    return dot / (magnitude1 * magnitude2)
-
-def get_answer(user_question):
-    user_words = preprocess(user_question)
-
-    if not user_words:
-        return "Please enter a meaningful question."
-
-    best_score = 0
-    best_answer = None
-
-    for question, answer in faqs:
-        faq_words = preprocess(question)
-        score = cosine_similarity(user_words, faq_words)
-
-        if score > best_score:
-            best_score = score
-            best_answer = answer
-
-    if best_score < 0.15:
-        return "Sorry, I could not find a matching answer. Please try another question."
-
-    return best_answer
-
-def send_message():
-    question = entry.get().strip()
-
-    if not question:
+    if not text:
+        messagebox.showwarning("Warning", "Please enter some text!")
         return
 
-    chat_area.config(state="normal")
-    chat_area.insert(tk.END, "You: " + question + "\n")
+    source = source_lang.get()
+    target = target_lang.get()
 
-    answer = get_answer(question)
+    try:
+        url = "https://api.mymemory.translated.net/get?" + urllib.parse.urlencode({
+            "q": text,
+            "langpair": source + "|" + target
+        })
 
-    chat_area.insert(tk.END, "Bot: " + answer + "\n\n")
-    chat_area.config(state="disabled")
+        request = urllib.request.Request(
+            url,
+            headers={"User-Agent": "Mozilla/5.0"}
+        )
 
-    entry.delete(0, tk.END)
-    chat_area.see(tk.END)
+        with urllib.request.urlopen(request, timeout=20) as response:
+            data = json.loads(response.read().decode("utf-8"))
+
+        result = data["responseData"]["translatedText"]
+
+        output_text.config(state="normal")
+        output_text.delete("1.0", tk.END)
+        output_text.insert(tk.END, result)
+        output_text.config(state="disabled")
+
+    except Exception as error:
+        messagebox.showerror(
+            "Translation Error",
+            "Translation failed. Check your internet connection and try again.\n\n"
+            + str(error)
+        )
+
+def copy_translation():
+    result = output_text.get("1.0", tk.END).strip()
+    if result:
+        root.clipboard_clear()
+        root.clipboard_append(result)
+        messagebox.showinfo("Copied", "Translation copied!")
 
 root = tk.Tk()
-root.title("AI FAQ Chatbot")
-root.geometry("650x550")
+root.title("Language Translation Tool")
+root.geometry("650x600")
 root.configure(bg="#eef3f8")
 
 title = tk.Label(
     root,
-    text="AI FAQ CHATBOT",
-    font=("Arial", 21, "bold"),
+    text="LANGUAGE TRANSLATION TOOL",
+    font=("Arial", 20, "bold"),
     bg="#eef3f8",
     fg="#183153"
 )
-title.pack(pady=15)
+title.pack(pady=20)
 
-subtitle = tk.Label(
-    root,
-    text="Ask me anything about AI, Python and internships!",
-    font=("Arial", 11),
-    bg="#eef3f8"
+tk.Label(root, text="Enter your text:", font=("Arial", 12),
+         bg="#eef3f8").pack()
+
+input_text = tk.Text(root, height=6, width=65, font=("Arial", 11))
+input_text.pack(pady=10)
+
+languages = {
+    "English": "en",
+    "Hindi": "hi",
+    "Telugu": "te",
+    "French": "fr",
+    "Spanish": "es",
+    "German": "de",
+    "Arabic": "ar",
+    "Japanese": "ja"
+}
+
+frame = tk.Frame(root, bg="#eef3f8")
+frame.pack(pady=15)
+
+tk.Label(frame, text="From:", bg="#eef3f8",
+         font=("Arial", 11)).grid(row=0, column=0, padx=8)
+
+source_lang = ttk.Combobox(
+    frame, values=list(languages.keys()), state="readonly", width=15
 )
-subtitle.pack()
+source_lang.set("English")
+source_lang.grid(row=0, column=1, padx=8)
 
-chat_area = scrolledtext.ScrolledText(
-    root,
-    width=70,
-    height=20,
-    font=("Arial", 11),
-    wrap=tk.WORD,
-    state="disabled"
+tk.Label(frame, text="To:", bg="#eef3f8",
+         font=("Arial", 11)).grid(row=0, column=2, padx=8)
+
+target_lang = ttk.Combobox(
+    frame, values=list(languages.keys()), state="readonly", width=15
 )
-chat_area.pack(padx=15, pady=15)
+target_lang.set("Hindi")
+target_lang.grid(row=0, column=3, padx=8)
 
-bottom = tk.Frame(root, bg="#eef3f8")
-bottom.pack(pady=10)
-
-entry = tk.Entry(bottom, width=48, font=("Arial", 12))
-entry.grid(row=0, column=0, padx=5)
-
-send_button = tk.Button(
-    bottom,
-    text="SEND",
-    command=send_message,
-    bg="#2463a6",
-    fg="white",
-    font=("Arial", 11, "bold")
+source_lang.bind(
+    "<<ComboboxSelected>>",
+    lambda event: None
 )
-send_button.grid(row=0, column=1, padx=5)
 
-entry.bind("<Return>", lambda event: send_message())
+def translate_text():
+    text = input_text.get("1.0", tk.END).strip()
+
+    if not text:
+        messagebox.showwarning("Warning", "Please enter some text!")
+        return
+
+    source = languages[source_lang.get()]
+    target = languages[target_lang.get()]
+
+    try:
+        url = "https://api.mymemory.translated.net/get?" + urllib.parse.urlencode({
+            "q": text,
+            "langpair": source + "|" + target
+        })
+
+        req = urllib.request.Request(
+            url, headers={"User-Agent": "Mozilla/5.0"}
+        )
+
+        with urllib.request.urlopen(req, timeout=20) as response:
+            data = json.loads(response.read().decode("utf-8"))
+
+        result = data["responseData"]["translatedText"]
+
+        output_text.config(state="normal")
+        output_text.delete("1.0", tk.END)
+        output_text.insert(tk.END, result)
+        output_text.config(state="disabled")
+
+    except Exception as error:
+        messagebox.showerror("Error", str(error))
+
+tk.Button(
+    root, text="TRANSLATE",
+    command=translate_text,
+    bg="#2463a6", fg="white",
+    font=("Arial", 12, "bold"),
+    width=20
+).pack(pady=10)
+
+tk.Label(root, text="Translated Text:",
+         font=("Arial", 12), bg="#eef3f8").pack()
+
+output_text = tk.Text(
+    root, height=6, width=65,
+    font=("Arial", 11), state="disabled"
+)
+output_text.pack(pady=10)
+
+tk.Button(
+    root, text="COPY TRANSLATION",
+    command=copy_translation,
+    bg="#23865a", fg="white",
+    font=("Arial", 11, "bold"),
+    width=20
+).pack(pady=10)
 
 root.mainloop()
